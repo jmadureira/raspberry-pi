@@ -1,0 +1,10 @@
+# Container state, bind-mounted into each service's data directory.
+# The .keep files are tracked so the directories exist on a fresh clone and
+# are owned by the cloning user rather than created as root by Docker.
+/data/*
+!/data/.keep
+/music/data/*
+!/music/data/.keep
+
+# Local overrides (music library path, secrets)
+.env

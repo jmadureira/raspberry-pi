@@ -1,0 +1,31 @@
+services:
+  navidrome:
+    container_name: navidrome
+    image: deluan/navidrome:0.63.2
+    ports:
+      # Web UI and Subsonic API. Reachable at http://<pi-ip>:4533
+      - "${NAVIDROME_PORT:-4533}:4533"
+    environment:
+      TZ: '${TZ:-Europe/Lisbon}'
+      # Where Navidrome looks for music inside the container. Matches the
+      # read-only bind mount below, so change the host path, not this one.
+      ND_MUSICFOLDER: '/music'
+      ND_DATAFOLDER: '/data'
+      # Rescan the library every hour. Navidrome also watches for changes,
+      # so this is mostly a safety net for files copied over the network.
+      ND_SCANSCHEDULE: '@every 1h'
+      ND_LOGLEVEL: 'info'
+      # Keep phone clients logged in for a month instead of the 24h default
+      ND_SESSIONTIMEOUT: '720h'
+      # On-the-fly transcoding cache, used when a client asks for a lower bitrate
+      ND_TRANSCODINGCACHESIZE: '150MiB'
+    # Run as the host user so the SQLite database is writable and the music
+    # files are readable without root. `id -u` / `id -g` on the Pi if unsure.
+    user: '${PUID:-1000}:${PGID:-1000}'
+    volumes:
+      # Navidrome's database, cache and artwork
+      - './data:/data'
+      # Your music library. Read-only so the container can never touch it.
+      # Set MUSIC_DIR in .env to the real path on the Pi. See .env.example.
+      - '${MUSIC_DIR:-/mnt/music}:/music:ro'
+    restart: unless-stopped
