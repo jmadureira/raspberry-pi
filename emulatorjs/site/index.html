@@ -84,7 +84,7 @@
           if (games[i].length) main.append(...renderSystem(system, games[i]));
         });
         if (!main.children.length) {
-          main.innerHTML = '<p class="empty">No games found. Add ROMs to <code>data/roms/&lt;system&gt;/</code> on the Pi.</p>';
+          main.innerHTML = '<p class="empty">No games found. Add ROMs to <code>&lt;ROMS_DIR&gt;/&lt;system&gt;/</code> on the Pi.</p>';
         }
       } catch (err) {
         main.innerHTML = "";

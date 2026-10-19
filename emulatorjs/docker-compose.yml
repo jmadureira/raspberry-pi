@@ -7,12 +7,25 @@ services:
         EMULATORJS_VERSION: 4.2.3
     image: emulatorjs-site:latest
     environment:
-      - TZ=Europe/Lisbon
+      - TZ=${TZ:-Europe/Lisbon}
     volumes:
-      # One folder per system, named after the EmulatorJS core, e.g. ./data/roms/nes/game.nes
-      - ./data/roms:/usr/share/nginx/html/roms:ro
-      # Optional BIOS per system, e.g. ./data/bios/psx/scph5501.bin (or a .zip with several)
-      - ./data/bios:/usr/share/nginx/html/bios:ro
+      # One folder per system, named after the EmulatorJS core, e.g. <ROMS_DIR>/nes/game.nes.
+      # Set ROMS_DIR in .env to load them from a USB drive; see .env.example.
+      - type: bind
+        source: ${ROMS_DIR:-./data/roms}
+        target: /usr/share/nginx/html/roms
+        read_only: true
+        # Fail to start if the drive isn't mounted, rather than have Docker create an
+        # empty root-owned folder on the SD card and serve an empty library.
+        bind:
+          create_host_path: false
+      # Optional BIOS per system, e.g. <BIOS_DIR>/psx/scph5501.bin (or a .zip with several)
+      - type: bind
+        source: ${BIOS_DIR:-./data/bios}
+        target: /usr/share/nginx/html/bios
+        read_only: true
+        bind:
+          create_host_path: false
     ports:
       - "8085:80"
     restart: unless-stopped
