@@ -1,0 +1,4 @@
+data/roms/*
+!data/roms/.keep
+data/bios/*
+!data/bios/.keep

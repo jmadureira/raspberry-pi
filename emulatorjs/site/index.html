@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Game Library</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; font-family: system-ui, sans-serif; background: #111; color: #eee; }
+    header { padding: 16px 24px; background: #1c1c1c; border-bottom: 1px solid #333; }
+    h1 { margin: 0; font-size: 1.4rem; }
+    main { padding: 16px 24px; max-width: 1000px; }
+    h2 { font-size: 1.1rem; margin: 24px 0 8px; color: #9cf; }
+    ul { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+    a { display: block; padding: 10px 12px; background: #1e1e1e; border: 1px solid #333; border-radius: 6px; color: inherit; text-decoration: none; }
+    a:hover { background: #2a2a2a; border-color: #555; }
+    .empty { color: #888; }
+    .error { color: #f88; }
+  </style>
+</head>
+<body>
+  <header><h1>Game Library</h1></header>
+  <main id="library"><p class="empty">Loading…</p></main>
+
+  <script>
+    // Folder names under /roms/ must match an EmulatorJS system name.
+    // Game Boy Color games go in "gb". PSP is left out: its core needs threads,
+    // which browsers only allow over HTTPS.
+    const SYSTEMS = {
+      nes: "Nintendo (NES)", snes: "Super Nintendo", n64: "Nintendo 64",
+      gb: "Game Boy / Game Boy Color", gba: "Game Boy Advance", nds: "Nintendo DS",
+      segaMS: "Sega Master System", segaGG: "Sega Game Gear", segaMD: "Sega Mega Drive",
+      segaCD: "Sega CD", sega32x: "Sega 32X", segaSaturn: "Sega Saturn",
+      psx: "PlayStation", atari2600: "Atari 2600", atari7800: "Atari 7800",
+      lynx: "Atari Lynx", jaguar: "Atari Jaguar", pce: "PC Engine", ngp: "Neo Geo Pocket",
+      ws: "WonderSwan", arcade: "Arcade", mame2003: "MAME 2003", vb: "Virtual Boy",
+      coleco: "ColecoVision", c64: "Commodore 64", amiga: "Amiga", dos: "DOS",
+    };
+
+    // EmulatorJS downloads a single file per game, so loose cue sheets (whose .bin
+    // tracks would never be fetched) and extra audio tracks can't be played on their
+    // own. Multi-track or multi-disc games should be a .zip (cue + bins) or a .chd.
+    const isPlayable = (name) =>
+      !name.startsWith(".") &&
+      !/\.(cue|ccd|toc|m3u)$/i.test(name) &&
+      !/\(Track 0*([2-9]|\d{2,})\)\.bin$/i.test(name);
+
+    async function list(path) {
+      const res = await fetch(path);
+      if (res.status === 404) return [];
+      if (!res.ok) throw new Error(`${path}: HTTP ${res.status}`);
+      return res.json();
+    }
+
+    function renderSystem(system, games) {
+      const h2 = document.createElement("h2");
+      h2.textContent = SYSTEMS[system] || system;
+      const ul = document.createElement("ul");
+      for (const game of games) {
+        const a = document.createElement("a");
+        a.href = `play.html?core=${encodeURIComponent(system)}&rom=${encodeURIComponent(game)}`;
+        a.textContent = game.replace(/\.[^.]+$/, "");
+        const li = document.createElement("li");
+        li.appendChild(a);
+        ul.appendChild(li);
+      }
+      return [h2, ul];
+    }
+
+    async function render() {
+      const main = document.getElementById("library");
+      try {
+        const systems = (await list("/roms/"))
+          .filter((e) => e.type === "directory")
+          .map((e) => e.name);
+        const games = await Promise.all(systems.map(async (system) =>
+          (await list(`/roms/${encodeURIComponent(system)}/`))
+            .filter((e) => e.type === "file" && isPlayable(e.name))
+            .map((e) => e.name)
+        ));
+
+        main.innerHTML = "";
+        systems.forEach((system, i) => {
+          if (games[i].length) main.append(...renderSystem(system, games[i]));
+        });
+        if (!main.children.length) {
+          main.innerHTML = '<p class="empty">No games found. Add ROMs to <code>data/roms/&lt;system&gt;/</code> on the Pi.</p>';
+        }
+      } catch (err) {
+        main.innerHTML = "";
+        const p = document.createElement("p");
+        p.className = "error";
+        p.textContent = `Couldn't load the game library: ${err.message}`;
+        main.appendChild(p);
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>

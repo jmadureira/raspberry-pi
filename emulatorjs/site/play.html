@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Playing</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #000; }
+    #back { position: fixed; top: 8px; left: 8px; z-index: 10; color: #ccc; font: 14px system-ui, sans-serif; text-decoration: none; background: #0008; padding: 4px 8px; border-radius: 4px; }
+    #game { width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+  <a id="back" href="/">&larr; Library</a>
+  <div id="game"></div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const core = params.get("core");
+    const rom = params.get("rom");
+    if (!core || !rom) {
+      location.replace("/");
+      throw new Error("play.html needs ?core= and ?rom=");
+    }
+
+    document.title = rom.replace(/\.[^.]+$/, "");
+
+    window.EJS_player = "#game";
+    window.EJS_core = core;
+    window.EJS_gameName = document.title;
+    window.EJS_gameUrl = `/roms/${encodeURIComponent(core)}/${encodeURIComponent(rom)}`;
+    window.EJS_pathtodata = "/emulatorjs/data/";
+    window.EJS_startOnLoaded = true;
+
+    // BIOS names to prefer when a system's BIOS folder holds several files.
+    const PREFERRED_BIOS = {
+      psx: ["scph5501.bin", "scph1001.bin", "scph7001.bin", "scph5500.bin", "scph5502.bin"],
+    };
+
+    // Optional BIOS from /bios/<core>/: a preferred name, else a .zip (EmulatorJS
+    // extracts it), else the first file.
+    async function findBios() {
+      try {
+        const res = await fetch(`/bios/${encodeURIComponent(core)}/`);
+        if (!res.ok) return null;
+        const files = (await res.json())
+          .filter((e) => e.type === "file" && !e.name.startsWith("."))
+          .map((e) => e.name)
+          .sort();
+        const byName = new Map(files.map((f) => [f.toLowerCase(), f]));
+        const preferred = (PREFERRED_BIOS[core] || []).find((name) => byName.has(name));
+        return (preferred && byName.get(preferred))
+          || files.find((f) => f.toLowerCase().endsWith(".zip"))
+          || files[0]
+          || null;
+      } catch {
+        return null;
+      }
+    }
+
+    findBios().then((bios) => {
+      if (bios) window.EJS_biosUrl = `/bios/${encodeURIComponent(core)}/${encodeURIComponent(bios)}`;
+      const loader = document.createElement("script");
+      loader.src = "/emulatorjs/data/loader.js";
+      document.body.appendChild(loader);
+    });
+  </script>
+</body>
+</html>
