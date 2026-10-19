@@ -18,6 +18,8 @@
     const params = new URLSearchParams(location.search);
     const core = params.get("core");
     const rom = params.get("rom");
+    // ROM folder on disk, which may differ from the core name in case (e.g. "SNES")
+    const dir = params.get("dir") || core;
     if (!core || !rom) {
       location.replace("/");
       throw new Error("play.html needs ?core= and ?rom=");
@@ -28,7 +30,7 @@
     window.EJS_player = "#game";
     window.EJS_core = core;
     window.EJS_gameName = document.title;
-    window.EJS_gameUrl = `/roms/${encodeURIComponent(core)}/${encodeURIComponent(rom)}`;
+    window.EJS_gameUrl = `/roms/${encodeURIComponent(dir)}/${encodeURIComponent(rom)}`;
     window.EJS_pathtodata = "/emulatorjs/data/";
     window.EJS_startOnLoaded = true;
 

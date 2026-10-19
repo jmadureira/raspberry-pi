@@ -23,7 +23,7 @@
   <main id="library"><p class="empty">Loading…</p></main>
 
   <script>
-    // Folder names under /roms/ must match an EmulatorJS system name.
+    // Folder names under /roms/ must match an EmulatorJS system name (any case).
     // Game Boy Color games go in "gb". PSP is left out: its core needs threads,
     // which browsers only allow over HTTPS.
     const SYSTEMS = {
@@ -45,6 +45,10 @@
       !/\.(cue|ccd|toc|m3u)$/i.test(name) &&
       !/\(Track 0*([2-9]|\d{2,})\)\.bin$/i.test(name);
 
+    // EmulatorJS only recognises exact system names, so map "SNES" to "snes" etc.
+    const coreFor = (dir) =>
+      Object.keys(SYSTEMS).find((k) => k.toLowerCase() === dir.toLowerCase()) || dir;
+
     async function list(path) {
       const res = await fetch(path);
       if (res.status === 404) return [];
@@ -52,13 +56,14 @@
       return res.json();
     }
 
-    function renderSystem(system, games) {
+    function renderSystem(dir, games) {
+      const core = coreFor(dir);
       const h2 = document.createElement("h2");
-      h2.textContent = SYSTEMS[system] || system;
+      h2.textContent = SYSTEMS[core] || dir;
       const ul = document.createElement("ul");
       for (const game of games) {
         const a = document.createElement("a");
-        a.href = `play.html?core=${encodeURIComponent(system)}&rom=${encodeURIComponent(game)}`;
+        a.href = `play.html?core=${encodeURIComponent(core)}&dir=${encodeURIComponent(dir)}&rom=${encodeURIComponent(game)}`;
         a.textContent = game.replace(/\.[^.]+$/, "");
         const li = document.createElement("li");
         li.appendChild(a);
