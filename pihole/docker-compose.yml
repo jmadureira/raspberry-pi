@@ -4,8 +4,8 @@ services:
     image: pihole/pihole:latest
     ports:
       # DNS Ports
-      # - "53:53/tcp"
-      # - "53:53/udp"
+      - "53:53/tcp"
+      - "53:53/udp"
       # Default HTTP Port
       # Default HTTP Port
       - "8080:80/tcp"

@@ -13,11 +13,10 @@ with:
 docker exec -it pihole pihole setpassword
 ```
 
-The DNS port mappings (53/tcp and 53/udp) are commented out in `docker-compose.yml`, so Pi-hole won't
-answer DNS queries until you uncomment both `53:53` lines. If the port is
-already taken (`sudo ss -lunp 'sport = :53'`), it's usually
-`systemd-resolved`. Set `DNSStubListener=no` in `/etc/systemd/resolved.conf`
-and run `sudo systemctl restart systemd-resolved`.
+Pi-hole answers DNS on port 53 of the Pi. If the container fails to start
+because that port is already taken (`sudo ss -lunp 'sport = :53'`), it's
+usually `systemd-resolved`. Set `DNSStubListener=no` in
+`/etc/systemd/resolved.conf` and run `sudo systemctl restart systemd-resolved`.
 
 Start it:
 
